@@ -5,10 +5,11 @@ import User from "../models/user.models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uploadCloudinary } from "../utils/cloudinary.js";
+import { sendEmail } from "../utils/emailSend.js";
 
 const options = {
-  httpOnly: false,
-  secure: false,
+  httpOnly: true,
+  secure: true,
 };
 
 const hashMap = async (password) => {
@@ -97,6 +98,14 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, "Something Went wrong While Creating User");
   }
+
+  await sendEmail(
+    createdUser.email,
+    "Register Successfully ",
+    `Thanks for being awesome!
+    
+  you are register Succesfully in our app`
+  );
 
   return res
     .status(200)

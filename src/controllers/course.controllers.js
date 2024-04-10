@@ -6,6 +6,7 @@ import Lecture from "../models/lecture.model.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import Enrollment from "../models/enroll.model.js";
 import sequelize from "../database/db.js";
+import { sendEmail } from "../utils/emailSend.js";
 
 const addCourse = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -329,6 +330,12 @@ const enrollUser = asyncHandler(async (req, res) => {
   if (!enrollmentUser) {
     throw new ApiError(502, "User Not Enrolled in course");
   }
+
+  await sendEmail(
+    user.email,
+    "User Enrollment",
+    `You are succesfully enrolled in ${course.courseName}`
+  );
 
   return res
     .status(200)

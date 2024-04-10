@@ -22,7 +22,8 @@
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",
     "resend": "^3.2.0",
-    "sequelize": "^6.37.2"
+    "sequelize": "^6.37.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
