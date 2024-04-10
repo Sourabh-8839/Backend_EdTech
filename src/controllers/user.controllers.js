@@ -4,10 +4,11 @@ import { apiResponse } from "../utils/apiResponse.js";
 import User from "../models/user.models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { uploadCloudinary } from "../utils/cloudinary.js";
 
 const options = {
-  httpOnly: true,
-  secure: true,
+  httpOnly: false,
+  secure: false,
 };
 
 const hashMap = async (password) => {
@@ -19,12 +20,13 @@ const isPasswordCorrect = async (incomingPassword, password) => {
 };
 
 //generate access token
-const generateAccessToken = async function () {
+const generateAccessToken = function () {
   return jwt.sign(
     {
       id: this.id,
       userName: this.userName,
       email: this.email,
+      Role: this.Role,
     },
     process.env.ACCESS_TOKEN_SECRETKEY,
     { expiresIn: process.env.ACCESS_TOKEN_TIME_DURATION }
@@ -32,8 +34,8 @@ const generateAccessToken = async function () {
 };
 
 // generate Refressh token
-const generateRefreshToken = async function () {
-  return await jwt.sign(
+const generateRefreshToken = function () {
+  return jwt.sign(
     {
       id: this.id,
     },
@@ -89,7 +91,7 @@ const registerUser = asyncHandler(async (req, res) => {
     Role: Role.toLowerCase(),
   });
 
-  console.log(user);
+  // console.log(user);
   const createdUser = await User.findByPk(user.id);
 
   if (!createdUser) {
@@ -165,4 +167,108 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, {}, "User logout Succesfully "));
 });
 
-export { registerUser, loginUser, logoutUser };
+const accessRefreshToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(400, "Unauthorized user");
+  }
+
+  try {
+    const decode = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRETKEY
+    );
+
+    const user = await User.findByPk(decode?.id);
+
+    if (!user) {
+      throw new ApiError(401, "Invalid refreshToken");
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(400, "RefreshToken is expired or used");
+    }
+
+    const { accessToken, refreshToken } =
+      await genreateRefreshTokenAndaccessToken(user.id);
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new apiResponse(
+          200,
+          { accessToken, refreshToken },
+          "Access Token refreshed"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(400, "Invalid Refresh Token");
+  }
+});
+
+const imageUpdate = asyncHandler(async (req, res) => {
+  const localFilePath = req?.files?.avatar[0]?.path;
+
+  const user = req.user;
+
+  if (!localFilePath) {
+    throw new ApiError(500, "Server Error");
+  }
+  const avatar = await uploadCloudinary(localFilePath);
+
+  if (!avatar) {
+    throw new ApiError(400, "profile picture upload again");
+  }
+
+  await User.update(
+    { avatar: avatar.url },
+    {
+      where: {
+        id: user.id,
+      },
+    }
+  );
+
+  return res
+    .status(200)
+    .json(
+      new apiResponse(200, { avatar: avatar.url }, "Image update successfully")
+    );
+});
+
+const updateDetails = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const { email, userName } = req.body;
+
+  const updateObject = {};
+
+  if (email) {
+    updateObject.email = email;
+  }
+
+  if (userName) {
+    updateObject.userName = userName;
+  }
+
+  await User.update(updateObject, {
+    where: { id: user.id },
+  });
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, {}, "Update Details Succesfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  accessRefreshToken,
+  imageUpdate,
+  updateDetails,
+};

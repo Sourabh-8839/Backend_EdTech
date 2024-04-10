@@ -29,6 +29,9 @@ const userSchema = sequelize.define("User", {
   refreshToken: {
     type: DataTypes.STRING,
   },
+  avatar: {
+    type: DataTypes.STRING,
+  },
 });
 
 export default userSchema;

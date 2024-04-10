@@ -1,31 +1,39 @@
-// import mongoose, { Schema } from "mongoose";
+import sequelize from "../database/db.js";
 
-// const courseSchema = new Schema({
-//   instructor: {
-//     type: Schema.Types.ObjectId,
-//     ref: "User",
-//   },
-//   title: {
-//     type: String,
-//     required: true,
-//     index: true,
-//   },
-//   description: {
-//     type: String,
-//   },
-//   coverPhoto: {
-//     type: String,
-//     required: true,
-//   },
-//   video: {
-//     type: String,
-//   },
-//   enrolledStudent: [
-//     {
-//       type: Schema.Types.ObjectId,
-//       ref: "User",
-//     },
-//   ],
-// });
+import { DataTypes, UUID } from "sequelize";
+import User from "./user.models.js";
 
-// export const course = mongoose.model("course", courseSchema);
+const courseSchema = sequelize.define(
+  "course",
+  {
+    courseId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true,
+    },
+    courseName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    level: {
+      type: DataTypes.ENUM,
+      values: ["Basic", "Intermediate", "professional"],
+      default: "Basic",
+    },
+  },
+  { timestamps: true }
+);
+
+courseSchema.belongsTo(User);
+User.hasMany(courseSchema);
+
+export default courseSchema;

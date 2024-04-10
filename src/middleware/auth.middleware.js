@@ -7,7 +7,7 @@ import { Op } from "sequelize";
 export const verifyJwt = asyncHandler(async (req, res, next) => {
   try {
     const token =
-      req.cookies?.accessToken ||
+      req?.cookies?.accessToken ||
       req.header("Authorization").replace("Bearer ", "");
 
     if (!token) {
@@ -16,7 +16,7 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
 
     const decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRETKEY);
 
-    console.log(decodeToken);
+    // console.log(decodeToken);
 
     const user = await User.findByPk(decodeToken.id);
 
